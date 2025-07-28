@@ -1,0 +1,124 @@
+const express = require("express");
+const connectionRouter = express.Router();
+const validateAuth = require("../middlewares/validate.auth.middleware");
+const validationConnection = require("../middlewares/validationConnection.middleware");
+const ConnectionModel = require("../models/Connection");
+
+connectionRouter.post(
+  "/:status/:toUserId",
+  validateAuth,
+  validationConnection,
+  async (req, res) => {
+    const { toUserId, status } = req.params;
+
+    try {
+      const isAlreadyExisted = !!(await ConnectionModel.findOne({
+        fromUserId: req.userId,
+        toUserId,
+      }));
+      if (isAlreadyExisted) {
+        return res.status(400).json({ message: "Already Requested" });
+      }
+      const details = await ConnectionModel.findOne({
+        fromUserId: toUserId,
+        toUserId: req.userId,
+      }).populate([{ path: "fromUserId", select: ["firstName", "lastName"] }]);
+      if (details) {
+        console.log("details:::", details);
+
+        if (details.status === "pass") {
+          return res.status(400).json({
+            message: `${details.fromUserId.firstName} ${details.fromUserId.lastName} Already shown Not Intrested!! `,
+          });
+        } else if (details.status === "interested") {
+          details.status = "accepted";
+          await details.save();
+          return res.status(200).json({
+            message: `${details.fromUserId.firstName} ${details.fromUserId.lastName} Already shown Intrested Now You both are Connected! `,
+          });
+        }
+      }
+
+      const newObj = await ConnectionModel({
+        fromUserId: req.userId,
+        toUserId,
+        status,
+      });
+      console.log("newObj:::", newObj);
+
+      await newObj.save();
+      const toUser = await User.findById(toUserId);
+      return res.json({
+        message:
+          "Connection Sent to " + toUser.firstName + " " + toUser.lastName,
+      });
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
+  }
+);
+
+connectionRouter.post(
+  "/review/:status/:toUserId",
+  validateAuth,
+  async (req, res) => {
+    try {
+      const { status, toUserId } = req.params;
+      const ConnectionObj = await ConnectionModel.findOne({
+        fromUserId: toUserId,
+        toUserId: req.userId,
+      }).populate([{ path: "fromUserId", select: "firstName lastName" }]);
+      if (ConnectionObj) {
+        const { status } = ConnectionObj;
+        if (status === "interested") {
+          ConnectionObj.status = status;
+
+          await ConnectionObj.save();
+          return res.status(200).json({
+            message: `You ${status} Connection of ${ConnectionObj.fromUserId.firstName} ${ConnectionObj.fromUserId.lastName} `,
+          });
+        } else if (status === "pass") {
+          res.status(400).json({
+            messsage: `${ConnectionObj.fromUserId.firstName} ${ConnectionObj.fromUserId.lastName} Already Ignored Your Profile!`,
+          });
+        } else if (status === "rejected") {
+          res
+            .status(400)
+            .json({ message: "You Already Rejected the Connection!" });
+        } else {
+          res
+            .status(400)
+            .json({ message: "You Already Connected Each Other!" });
+        }
+      }
+      res.status(404).json({ message: "You didn't recieved connection!" });
+    } catch (e) {
+      res.status(400).json({ message: e.message });
+    }
+  }
+);
+
+connectionRouter.get("/", validateAuth, async (req, res) => {
+  try {
+    const obj = await ConnectionModel.find({
+      $or: [
+        { fromUserId: req.userId, status: "accepted" },
+        { toUserId: req.userId, status: "accepted" },
+      ],
+    }).populate([
+      { path: "toUserId", select: ["firstName", "lastName"] },
+      { path: "fromUserId", select: ["firstName", "lastName"] },
+    ]);
+    const connectionRes = obj.map((item) => {
+      if (item.fromUserId._id.toString() === req.userId.toString()) {
+        return item.toUserId;
+      }
+      return item.fromUserId;
+    });
+    res.json({ data: connectionRes });
+  } catch (e) {
+    res.json({ message: e.message });
+  }
+});
+
+module.exports = connectionRouter;

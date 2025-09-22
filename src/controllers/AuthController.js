@@ -17,6 +17,7 @@ class AuthController {
         const JWTToken = user.createJWT();
         res.cookie("token", JWTToken, {
           httpOnly: true,
+          secure: false,
         });
 
         res.send("Login Successful");
@@ -42,7 +43,7 @@ class AuthController {
         res.cookie("token", JWTToken, {
           httpOnly: true,
         });
-        res.send("User Registration Successful!");
+        res.send(`User Registered Successfully`);
       }
     } catch (err) {
       console.log("err from register:::", err.name);

@@ -1,5 +1,6 @@
 const express = require("express");
 const User = require("../models/User");
+const { SAFE_VARIABLES } = require("../utils/constant");
 
 const userRouter = express.Router();
 const validateAuth = require("../middlewares/validate.auth.middleware");
@@ -7,7 +8,7 @@ const preventUnallowedUpdates = require("../middlewares/preventUnallowedUpdates.
 
 userRouter.get("/", validateAuth, async (req, res) => {
   try {
-    const user = await User.find({ _id: req.userId });
+    const user = await User.findOne({ _id: req.userId }).select(SAFE_VARIABLES);
     res.send(user);
   } catch (e) {
     console.error(e.message);

@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
+const cors = require("cors");
 const User = require("./models/User");
 const ConnectionModel = require("./models/Connection");
 const preventUnallowedUpdates = require("./middlewares/preventUnallowedUpdates.middleware");
@@ -12,8 +13,15 @@ const cookieParser = require("cookie-parser");
 const JWT = require("jsonwebtoken");
 const validateAuth = require("./middlewares/validate.auth.middleware");
 const validationConnectionRoute = require("./middlewares/validationConnection.middleware");
+const { SAFE_VARIABLES } = require("./utils/constant");
 
 const app = express();
+const corsOptions = {
+  origin: "http://localhost:5173",
+  credentials: true,
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 app.use(cookieParser());
 app.use("/auth", authRouter);
@@ -50,6 +58,7 @@ app.get("/feed", validateAuth, async (req, res) => {
     { path: "fromUserId", select: "firstName lastName" },
     { path: "toUserId", select: "firstName lastName" },
   ]);
+
   const uniqueIds = new Set();
   uniqueIds.add(req.userId);
 
@@ -61,9 +70,13 @@ app.get("/feed", validateAuth, async (req, res) => {
     }
   });
   const uniqueIdsArr = Array.from(uniqueIds);
+  console.log({ uniqueIds });
   const response = await User.find({
     _id: { $nin: uniqueIdsArr },
-  });
+  })
+    .select(SAFE_VARIABLES)
+    .skip(0)
+    .limit(10);
   res.json({ data: response });
 });
 DBConnection().then(() => {

@@ -3,19 +3,25 @@ const connectionRouter = express.Router();
 const validateAuth = require("../middlewares/validate.auth.middleware");
 const validationConnection = require("../middlewares/validationConnection.middleware");
 const ConnectionModel = require("../models/Connection");
-
+const UserModel = require("../models/User");
+const { SAFE_VARIABLES } = require("../utils/constant");
 connectionRouter.post(
   "/:status/:toUserId",
   validateAuth,
   validationConnection,
   async (req, res) => {
     const { toUserId, status } = req.params;
+    console.log({ toUserId, status });
 
     try {
       const isAlreadyExisted = !!(await ConnectionModel.findOne({
         fromUserId: req.userId,
         toUserId,
       }));
+      // return res.send("everything is fine!")
+      const reqUser = await UserModel.findById(toUserId);
+      console.log({ reqUser });
+
       if (isAlreadyExisted) {
         return res.status(400).json({ message: "Already Requested" });
       }
@@ -98,7 +104,7 @@ connectionRouter.post(
   }
 );
 
-connectionRouter.get("/", validateAuth, async (req, res) => {
+connectionRouter.get("/connections", validateAuth, async (req, res) => {
   try {
     const obj = await ConnectionModel.find({
       $or: [
@@ -106,8 +112,8 @@ connectionRouter.get("/", validateAuth, async (req, res) => {
         { toUserId: req.userId, status: "accepted" },
       ],
     }).populate([
-      { path: "toUserId", select: ["firstName", "lastName"] },
-      { path: "fromUserId", select: ["firstName", "lastName"] },
+      { path: "toUserId", select: SAFE_VARIABLES },
+      { path: "fromUserId", select: SAFE_VARIABLES },
     ]);
     const connectionRes = obj.map((item) => {
       if (item.fromUserId._id.toString() === req.userId.toString()) {
@@ -116,6 +122,19 @@ connectionRouter.get("/", validateAuth, async (req, res) => {
       return item.fromUserId;
     });
     res.json({ data: connectionRes });
+  } catch (e) {
+    res.json({ message: e.message });
+  }
+});
+
+connectionRouter.get("/requests", validateAuth, async (req, res) => {
+  try {
+    const obj = await ConnectionModel.find({
+      toUserId: req.userId,
+      status: "interested",
+    }).populate([{ path: "fromUserId", select: SAFE_VARIABLES }]);
+
+    res.json({ data: obj });
   } catch (e) {
     res.json({ message: e.message });
   }

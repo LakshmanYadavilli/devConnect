@@ -70,7 +70,6 @@ userSchema.methods.createJWT = function () {
   console.log("token created:::", token);
   return token;
 };
-userSchema.createIndex({ email });
 
 const User = model("User", userSchema);
 

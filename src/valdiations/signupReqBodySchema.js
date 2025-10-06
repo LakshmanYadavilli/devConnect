@@ -13,8 +13,8 @@ const userSchema = Joi.object({
       }
       return value;
     }),
-  gender: Joi.string().valid("male", "female", "other").required(),
-  age: Joi.number().min(18).required(),
+  gender: Joi.string().valid("male", "female", "other"),
+  age: Joi.number().min(18),
   skills: Joi.array().items(Joi.string()).max(10),
   about: Joi.string().max(100).allow(""),
 });

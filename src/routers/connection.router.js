@@ -10,9 +10,6 @@ connectionRouter.post(
   validateAuth,
   validationConnection,
   async (req, res) => {
-    const { toUserId, status } = req.params;
-    console.log({ toUserId, status });
-
     try {
       const isAlreadyExisted = !!(await ConnectionModel.findOne({
         fromUserId: req.userId,
@@ -53,10 +50,14 @@ connectionRouter.post(
       console.log("newObj:::", newObj);
 
       await newObj.save();
-      const toUser = await User.findById(toUserId);
+      const toUser = await UserModel.findById(toUserId);
+      const message =
+        status === "interest"
+          ? "Connection Sent to " + toUser.firstName + " " + toUser.lastName
+          : "You have Ignored " + toUser.firstName + " " + toUser.lastName;
+
       return res.json({
-        message:
-          "Connection Sent to " + toUser.firstName + " " + toUser.lastName,
+        message,
       });
     } catch (e) {
       res.status(400).json({ message: e.message });
@@ -70,24 +71,28 @@ connectionRouter.post(
   async (req, res) => {
     try {
       const { status, toUserId } = req.params;
+      const validStatus = ["accepted", "rejected"];
+      if (!validStatus.includes(status)) {
+        return res.status(400).json({ message: "Invalid Status" });
+      }
       const ConnectionObj = await ConnectionModel.findOne({
         fromUserId: toUserId,
         toUserId: req.userId,
       }).populate([{ path: "fromUserId", select: "firstName lastName" }]);
       if (ConnectionObj) {
-        const { status } = ConnectionObj;
-        if (status === "interested") {
+        const { status: ConnectionObjStatus } = ConnectionObj;
+        if (ConnectionObjStatus === "interested") {
           ConnectionObj.status = status;
 
           await ConnectionObj.save();
           return res.status(200).json({
             message: `You ${status} Connection of ${ConnectionObj.fromUserId.firstName} ${ConnectionObj.fromUserId.lastName} `,
           });
-        } else if (status === "pass") {
+        } else if (ConnectionObjStatus === "pass") {
           res.status(400).json({
             messsage: `${ConnectionObj.fromUserId.firstName} ${ConnectionObj.fromUserId.lastName} Already Ignored Your Profile!`,
           });
-        } else if (status === "rejected") {
+        } else if (ConnectionObjStatus === "rejected") {
           res
             .status(400)
             .json({ message: "You Already Rejected the Connection!" });

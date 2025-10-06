@@ -43,7 +43,10 @@ class AuthController {
         res.cookie("token", JWTToken, {
           httpOnly: true,
         });
-        res.send(`User Registered Successfully`);
+        const userInfo = { ...body };
+        delete userInfo.password;
+
+        res.json({ data: userInfo, message: "User Registered Successfully" });
       }
     } catch (err) {
       console.log("err from register:::", err.name);

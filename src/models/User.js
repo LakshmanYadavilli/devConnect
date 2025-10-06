@@ -42,7 +42,6 @@ const userSchema = Schema(
     },
     gender: {
       type: String,
-      require: true,
     },
     age: {
       type: Number,

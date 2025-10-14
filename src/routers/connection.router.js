@@ -11,14 +11,12 @@ connectionRouter.post(
   validationConnection,
   async (req, res) => {
     try {
+      const { status, toUserId } = req.params;
       const isAlreadyExisted = !!(await ConnectionModel.findOne({
         fromUserId: req.userId,
         toUserId,
       }));
 
-      console.log("res:::", res);
-      console.log("isAlreadyExisted:::", isAlreadyExisted);
-      // return res.send("everything is fine!")
       const reqUser = await UserModel.findById(toUserId);
       console.log({ reqUser });
 
@@ -44,27 +42,24 @@ connectionRouter.post(
           });
         }
       }
-      return res.status(200).send("everything is fine!");
+      const newObj = await ConnectionModel({
+        fromUserId: req.userId,
+        toUserId,
+        status,
+      });
 
-      // const newObj = await ConnectionModel({
-      //   fromUserId: req.userId,
-      //   toUserId,
-      //   status,
-      // });
-      // console.log("newObj:::", newObj);
+      await newObj.save();
+      const toUser = await UserModel.findById(toUserId);
+      const message =
+        status === "interested"
+          ? "Connection Sent to " + toUser.firstName + " " + toUser.lastName
+          : "You have Ignored " + toUser.firstName + " " + toUser.lastName;
 
-      // await newObj.save();
-      // const toUser = await UserModel.findById(toUserId);
-      // const message =
-      //   status === "interest"
-      //     ? "Connection Sent to " + toUser.firstName + " " + toUser.lastName
-      //     : "You have Ignored " + toUser.firstName + " " + toUser.lastName;
-
-      // return res.json({
-      //   message,
-      // });
+      return res.json({
+        message,
+      });
     } catch (e) {
-      res.status(400).json({ message: e.message });
+      res.status(500).json({ message: e.message });
     }
   }
 );

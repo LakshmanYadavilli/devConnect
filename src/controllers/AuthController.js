@@ -10,7 +10,7 @@ class AuthController {
     if (!user) {
       res.status(404).send("User Not Found");
     } else {
-      const isPasswordMatch = user.isVerifiedPassword(password);
+      const isPasswordMatch = await user.isVerifiedPassword(password);
       if (!isPasswordMatch) {
         res.status(401).send("Invalid Credentials");
       } else {

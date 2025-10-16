@@ -14,6 +14,7 @@ const JWT = require("jsonwebtoken");
 const validateAuth = require("./middlewares/validate.auth.middleware");
 const validationConnectionRoute = require("./middlewares/validationConnection.middleware");
 const { SAFE_VARIABLES } = require("./utils/constant");
+require("dotenv").config();
 
 const app = express();
 const corsOptions = {

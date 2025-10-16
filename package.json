@@ -11,9 +11,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.910.0",
     "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2",

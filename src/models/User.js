@@ -55,9 +55,9 @@ const userSchema = Schema(
   },
   { Timestamps: true }
 );
-userSchema.methods.isVerifiedPassword = function (password) {
+userSchema.methods.isVerifiedPassword = async function (password) {
   const user = this;
-  return bcrypt.compare(password, user.password);
+  return await bcrypt.compare(password, user.password);
 };
 userSchema.methods.createJWT = function () {
   console.log("creatJWT called:::");
